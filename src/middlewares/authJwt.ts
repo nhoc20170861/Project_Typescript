@@ -18,7 +18,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
         const decoded = jwt.verify(token, accessTokenSecret);
 
         (req as CustomRequest).token = decoded;
-        console.log(req['token']);
+        // console.log(req['token']);
 
         next();
     } catch (err) {

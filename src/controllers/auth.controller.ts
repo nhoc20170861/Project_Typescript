@@ -1,4 +1,5 @@
 import { accessTokenSecret } from '../config/config';
+import { IUser } from '../models/user.model';
 import db from '../models';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
@@ -119,6 +120,47 @@ class AuthController {
                     // roles: authorities,
                     accessToken: accessToken,
                     refreshToken: refreshToken
+                });
+            });
+    };
+
+    static changePassword = async (req: Request, res: Response) => {
+        //Get ID from JWT
+        const { id } = req['token'];
+
+        //Get parameters from the body
+        const { oldPassword, newPassword } = req.body;
+
+        if (!(oldPassword && newPassword)) {
+            return res.status(400).send();
+        }
+
+        //Get user from the database
+        User.findById(id)
+            .exec()
+            .then((user) => {
+                console.log(user);
+                // Check if old password matchs
+                if (user != null) {
+                    //  console.log(user.password);
+                    const checkOldPassword = bcrypt.compareSync(oldPassword, user.password);
+                    if (!checkOldPassword) {
+                        return res.send('oldpassword error');
+                    }
+                    user = Object.assign(user, { password: bcrypt.hashSync(newPassword, 8) });
+
+                    user.save().then((updateUser) => {
+                        res.json({
+                            msg: 'update success',
+                            updateUser
+                        });
+                    });
+                }
+            })
+            .catch((err) => {
+                res.status(500).json({
+                    success: false,
+                    message: err.message
                 });
             });
     };
