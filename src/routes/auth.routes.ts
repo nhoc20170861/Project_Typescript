@@ -15,5 +15,5 @@ router.post('/signup', [verifySignUp.checkDuplicateUsernameOrEmail, verifySignUp
 router.post('/signin', AuthController.signin);
 
 //Change my password
-router.post('/change-password', [verifyToken], AuthController.changePassword);
+router.put('/change-password', [verifyToken], AuthController.changePassword);
 export default router;

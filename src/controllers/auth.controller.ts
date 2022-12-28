@@ -23,7 +23,7 @@ class AuthController {
                 res.status(500).send({ message: err });
                 return;
             }
-            return res.send({ message: 'User was registered successfully!' });
+            return res.status(200).json({ message: 'User was registered successfully!' });
 
             // if (req.body.roles) {
             //     Role.find(
