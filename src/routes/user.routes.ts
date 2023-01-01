@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { allAccess, userBoard } from '../controllers/user.controller';
-import { verifyToken } from '../middlewares/authJwt';
+import { allAccess, userBoard, moderatorBoard, adminBoard } from '../controllers/user.controller';
+import authJwt from '../middlewares/authJwt';
 import CourseController from '../controllers/course.controller';
 
 const router = Router();
@@ -16,20 +16,27 @@ router.use(function (req: Request, res: Response, next: NextFunction) {
 
 router.get('/all', allAccess);
 
-router.get('/user', [verifyToken], userBoard);
+// [GET] /api/test/user for loggedin users (user/moderator/admin)
+router.get('/user', [authJwt.verifyToken], userBoard);
 
-router.post('/create-course', [verifyToken], CourseController.createCourse);
+// [GET] /api/test/mod for moderator
+router.get('/mod', [authJwt.verifyToken, authJwt.isModerator], moderatorBoard);
+
+// [GET] /api/test/admin for admin users
+router.get('/admin', [authJwt.verifyToken, authJwt.isAdmin], adminBoard);
+
+router.post('/create-course', [authJwt.verifyToken], CourseController.createCourse);
 
 // [GET] list course stored in database
-router.get('/courses', [verifyToken], CourseController.getAllCourse);
+router.get('/courses', [authJwt.verifyToken], CourseController.getAllCourse);
 
 // [GET] single course
-router.get('/courses/:courseId', [verifyToken], CourseController.getSingleCourse);
+router.get('/courses/:courseId', [authJwt.verifyToken], CourseController.getSingleCourse);
 
 // [PATCH] update one course
-router.patch('/update-course/:courseId', [verifyToken], CourseController.updateCourse);
+router.patch('/update-course/:courseId', [authJwt.verifyToken], CourseController.updateCourse);
 
 // [DELETE] delete one course
-router.delete('/delete-course/:courseId', [verifyToken], CourseController.deleteCourse);
+router.delete('/delete-course/:courseId', [authJwt.verifyToken], CourseController.deleteCourse);
 
 export default router;

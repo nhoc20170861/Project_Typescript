@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import verifySignUp from '../middlewares/verifySignup';
-import { verifyToken } from '../middlewares/authJwt';
+import awtJwt from '../middlewares/authJwt';
 import AuthController from '../controllers/auth.controller';
 
 const router = Router();
@@ -15,5 +15,7 @@ router.post('/signup', [verifySignUp.checkDuplicateUsernameOrEmail, verifySignUp
 router.post('/signin', AuthController.signin);
 
 //Change my password
-router.put('/change-password', [verifyToken], AuthController.changePassword);
+router.put('/change-password', [awtJwt.verifyToken], AuthController.changePassword);
+
+router.post('/refreshtoken', AuthController.refreshToken);
 export default router;

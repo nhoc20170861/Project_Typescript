@@ -2,9 +2,12 @@ import { accessTokenSecret } from '../config/config';
 import { IUser } from '../models/user.model';
 import db from '../models';
 import { Request, Response } from 'express';
+import { jwtExpiration } from '../config/config';
 import mongoose from 'mongoose';
+
 const User = db.user;
 const Role = db.role;
+const RefreshToken = db.refreshToken;
 
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
@@ -23,58 +26,59 @@ class AuthController {
                 res.status(500).send({ message: err });
                 return;
             }
-            return res.status(200).json({ message: 'User was registered successfully!' });
+            // return res.status(200).json({ message: 'User was registered successfully!' });
 
-            // if (req.body.roles) {
-            //     Role.find(
-            //         {
-            //             name: { $in: req.body.roles }
-            //         },
-            //         (err, roles) => {
-            //             if (err) {
-            //                 res.status(500).send({ message: err });
-            //                 return;
-            //             }
+            if (req.body.roles) {
+                Role.find(
+                    {
+                        name: { $in: req.body.roles }
+                    },
+                    (err, roles) => {
+                        if (err) {
+                            res.status(500).send({ message: err });
+                            return;
+                        }
 
-            //             user.roles = roles.map((role) => role._id);
-            //             user.save((err) => {
-            //                 if (err) {
-            //                     res.status(500).send({ message: err });
-            //                     return;
-            //                 }
+                        user.roles = roles.map((role) => role._id);
+                        user.save((err) => {
+                            // console.log(user);
+                            if (err) {
+                                res.status(500).send({ message: err });
+                                return;
+                            }
 
-            //                 res.send({ message: 'User was registered successfully!' });
-            //             });
-            //         }
-            //     );
-            // } else {
-            //     Role.findOne({ name: 'user' }, (err, role) => {
-            //         if (err) {
-            //             res.status(500).send({ message: err });
-            //             return;
-            //         }
+                            res.send({ message: 'User was registered successfully!' });
+                        });
+                    }
+                );
+            } else {
+                Role.findOne({ name: 'user' }, (err, role) => {
+                    if (err) {
+                        res.status(500).send({ message: err });
+                        return;
+                    }
 
-            //         user.roles = [role._id];
-            //         user.save((err) => {
-            //             if (err) {
-            //                 res.status(500).send({ message: err });
-            //                 return;
-            //             }
+                    user.roles = [role._id];
+                    user.save((err) => {
+                        if (err) {
+                            res.status(500).send({ message: err });
+                            return;
+                        }
 
-            //             res.send({ message: 'User was registered successfully!' });
-            //         });
-            //     });
-            // }
+                        res.send({ message: 'User was registered successfully!' });
+                    });
+                });
+            }
         });
     };
 
-    static signin = (req: Request, res: Response) => {
+    static signin = async (req: Request, res: Response) => {
         console.log(req.body);
         User.findOne({
             username: req.body.username
         })
             //.populate('roles', '-__v')
-            .exec((err, user) => {
+            .exec(async (err, user) => {
                 if (err) {
                     res.status(500).send({ message: err });
                     return;
@@ -93,22 +97,15 @@ class AuthController {
                     });
                 }
 
-                const accessToken = jwt.sign({ id: user.id }, accessTokenSecret, {
-                    expiresIn: 86400 // 24 hours
+                const accessToken = jwt.sign({ userId: user.id }, accessTokenSecret, {
+                    expiresIn: jwtExpiration // 1 hours
                 });
 
                 // set refreshToken
-                const refreshToken = jwt.sign(
-                    {
-                        id: user.id
-                    },
-                    accessTokenSecret,
-                    {
-                        expiresIn: 3600 * 24 // //expire after 24h
-                    }
-                );
+                const refreshToken = await RefreshToken.createToken(user.id);
+                console.log('refreshtoken', refreshToken);
 
-                var authorities: string[] = [];
+                // var authorities: string[] = [];
 
                 // for (let i = 0; i < user.roles.length; i++) {
                 //     authorities.push('ROLE_' + user.roles[i].name.toUpperCase());
@@ -163,6 +160,42 @@ class AuthController {
                     message: err.message
                 });
             });
+    };
+
+    static refreshToken = async (req: Request, res: Response) => {
+        const { refreshToken: requestToken } = req.body;
+
+        if (requestToken == null) {
+            return res.status(403).json({ message: 'Refresh Token is required!' });
+        }
+
+        try {
+            let refreshToken = await RefreshToken.findOne({ token: requestToken });
+
+            if (!refreshToken) {
+                res.status(403).json({ message: 'Refresh token is not in database!' });
+                return;
+            }
+
+            if (RefreshToken.verifyExpiration(refreshToken)) {
+                RefreshToken.findByIdAndRemove(refreshToken._id, { useFindAndModify: false }).exec();
+
+                res.status(403).json({
+                    message: 'Refresh token was expired. Please make a new signin request'
+                });
+                return;
+            }
+            let newAccessToken = jwt.sign({ id: refreshToken.userId._id }, accessTokenSecret, {
+                expiresIn: jwtExpiration
+            });
+
+            return res.status(200).json({
+                accessToken: newAccessToken,
+                refreshToken: refreshToken.token
+            });
+        } catch (err) {
+            return res.status(500).send({ message: err });
+        }
     };
 }
 
