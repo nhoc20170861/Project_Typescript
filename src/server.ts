@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 
-import db from './models';
 import mongodb, { SERVER_PORT } from './config/config';
 import Logging from './library/Logging';
 import routes from './routes';
@@ -11,7 +11,7 @@ const app: Express = express();
 const port_server = SERVER_PORT;
 
 // mongodb connection
-db.mongoose
+mongoose
     .connect(`mongodb://${mongodb.HOST}:${mongodb.PORT}/${mongodb.DB}`, {})
     .then(() => {
         Logging.info('Connected to the database!');
@@ -34,6 +34,7 @@ const StartServer = () => {
     app.use(express.urlencoded({ extended: true }));
     //Set all routes from routes folder
     app.use('/api', routes);
+
     app.listen(port_server, () => {
         Logging.info(`⚡️[server]: Server is running at http://localhost:${port_server}`);
     });
