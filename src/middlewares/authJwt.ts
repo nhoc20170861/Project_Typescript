@@ -6,13 +6,14 @@ const { TokenExpiredError } = jwt;
 
 import { accessTokenSecret } from '../config/config';
 import db from '../models';
+import { IRole } from '../models/role.model';
 const User = db.user;
 const Role = db.role;
 
 export interface CustomRequest extends Request {
     token: string | jwt.JwtPayload;
 }
-export const catchError = (err, res: Response) => {
+export const catchError = (err: Error, res: Response) => {
     if (err instanceof TokenExpiredError) {
         return res.status(401).send({ message: 'Unauthorized! Access Token was expired!' });
     }
@@ -21,8 +22,9 @@ export const catchError = (err, res: Response) => {
 };
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-    const token = <string>req.headers['x-access-token'];
-    // Logging.info(token);
+    const authorizationHeader = <string>req.headers['authorization'];
+    const token = <string>authorizationHeader.split(' ')[1];
+    Logging.info(token);
 
     if (!token) {
         return res.status(403).send({ message: 'No token provided!' });
@@ -39,7 +41,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     console.log(req['token']);
 };
 
-const isAdmin = (req, res, next) => {
+const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     User.findById(req['token'].userId).exec((err, user) => {
         if (err) {
             res.status(500).send({ message: err });
@@ -50,7 +52,7 @@ const isAdmin = (req, res, next) => {
                 {
                     _id: { $in: user.roles }
                 },
-                (err, roles) => {
+                (err: Error, roles: IRole[]) => {
                     if (err) {
                         res.status(500).send({ message: err });
                         return;
@@ -70,7 +72,7 @@ const isAdmin = (req, res, next) => {
     });
 };
 
-const isModerator = (req, res, next) => {
+const isModerator = (req: Request, res: Response, next: NextFunction) => {
     User.findById(req['token'].userId).exec((err, user) => {
         if (err) {
             res.status(500).send({ message: err });
@@ -81,7 +83,7 @@ const isModerator = (req, res, next) => {
                 {
                     _id: { $in: user.roles }
                 },
-                (err, roles) => {
+                (err :Error, roles: IRole[]) => {
                     if (err) {
                         res.status(500).send({ message: err });
                         return;

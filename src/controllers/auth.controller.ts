@@ -4,6 +4,7 @@ import db from '../models';
 import { Request, Response } from 'express';
 import { jwtExpiration } from '../config/config';
 import mongoose from 'mongoose';
+import roleModel, { IRole } from '../models/role.model';
 
 const User = db.user;
 const Role = db.role;
@@ -33,7 +34,7 @@ class AuthController {
                     {
                         name: { $in: req.body.roles }
                     },
-                    (err, roles) => {
+                    (err: Error, roles: IRole[]) => {
                         if (err) {
                             res.status(500).send({ message: err });
                             return;
@@ -52,7 +53,7 @@ class AuthController {
                     }
                 );
             } else {
-                Role.findOne({ name: 'user' }, (err, role) => {
+                Role.findOne({ name: 'user' }, (err: Error, role: IRole) => {
                     if (err) {
                         res.status(500).send({ message: err });
                         return;
@@ -105,16 +106,20 @@ class AuthController {
                 const refreshToken = await RefreshToken.createToken(user.id);
                 console.log('refreshtoken', refreshToken);
 
-                // var authorities: string[] = [];
-
-                // for (let i = 0; i < user.roles.length; i++) {
-                //     authorities.push('ROLE_' + user.roles[i].name.toUpperCase());
-                // }
+                var authorities: string[] = [];
+               
+                for (let i = 0; i < user.roles.length; i++) {
+                    await roleModel.findById(user.roles[i]).then((role) => {
+                        if (role != null) {
+                            authorities.push('ROLE_' + role.name.toUpperCase());
+                        }
+                    });
+                }
                 res.status(200).send({
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    // roles: authorities,
+                    roles: authorities,
                     accessToken: accessToken,
                     refreshToken: refreshToken
                 });
@@ -178,14 +183,14 @@ class AuthController {
             }
 
             if (RefreshToken.verifyExpiration(refreshToken)) {
-                RefreshToken.findByIdAndRemove(refreshToken._id, { useFindAndModify: false }).exec();
+                await RefreshToken.findByIdAndRemove(refreshToken._id, { useFindAndModify: false }).exec();
 
                 res.status(403).json({
                     message: 'Refresh token was expired. Please make a new signin request'
                 });
                 return;
             }
-            let newAccessToken = jwt.sign({ id: refreshToken.userId._id }, accessTokenSecret, {
+            let newAccessToken = jwt.sign({ id: refreshToken._id }, accessTokenSecret, {
                 expiresIn: jwtExpiration
             });
 

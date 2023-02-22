@@ -1,11 +1,11 @@
-import { Schema, Types, Document, Model, model } from 'mongoose';
+import { Schema, Document, Model, model } from 'mongoose';
 import { jwtExpiration, jwtRefreshExpiration } from '../config/config';
 const { v4: uuidv4 } = require('uuid');
 
 interface RefreshTokenDocument extends Document {
     token: string;
     expiryDate: Date;
-    userId: Types.ObjectId;
+    userId: Schema.Types.ObjectId;
 }
 
 interface RefreshTokenModel extends Model<RefreshTokenDocument> {

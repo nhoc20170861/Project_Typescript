@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 
 import db from './models';
@@ -11,6 +11,8 @@ const app: Express = express();
 const port_server = SERVER_PORT;
 
 // mongodb connection
+// db.mongoose.set('debug',true);
+//console.log(`mongodb://${mongodb.HOST}:${mongodb.PORT}/${mongodb.DB}`)
 db.mongoose
     .connect(`mongodb://${mongodb.HOST}:${mongodb.PORT}/${mongodb.DB}`, {})
     .then(() => {
@@ -32,45 +34,11 @@ const StartServer = () => {
 
     // parse requests of content-type - application/x-www-form-urlencoded
     app.use(express.urlencoded({ extended: true }));
-    //Set all routes from routes folder
+  
     app.use('/api', routes);
+
     app.listen(port_server, () => {
         Logging.info(`⚡️[server]: Server is running at http://localhost:${port_server}`);
     });
 };
 
-function initial() {
-    Role.estimatedDocumentCount((err, count) => {
-        if (!err && count === 0) {
-            new Role({
-                name: 'user'
-            }).save((err) => {
-                if (err) {
-                    console.log('error', err);
-                }
-
-                console.log("added 'user' to roles collection");
-            });
-
-            new Role({
-                name: 'moderator'
-            }).save((err) => {
-                if (err) {
-                    console.log('error', err);
-                }
-
-                console.log("added 'moderator' to roles collection");
-            });
-
-            new Role({
-                name: 'admin'
-            }).save((err) => {
-                if (err) {
-                    console.log('error', err);
-                }
-
-                console.log("added 'admin' to roles collection");
-            });
-        }
-    });
-}

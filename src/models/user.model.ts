@@ -1,10 +1,11 @@
-import mongoose, { Schema, model, connect } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
+import { IRole } from './role.model';
 // 1. Create an interface representing a document in MongoDB.
 export interface IUser {
     username: String;
     email: String;
     password: String;
-    roles: [Schema.Types.ObjectId];
+    roles: IRole['_id'][];
 }
 
 // 2. Create a Schema corresponding to the document interface.
@@ -12,17 +13,16 @@ const userSchema = new Schema<IUser>({
     username: { type: String, required: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
-    roles: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'Role'
-    }
+    roles: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Role'
+        }
+    ]
 });
 
 // 3. Create a Model.
-const User = model<IUser>('User', userSchema);
-const build = (att: IUser) => {
-    return new User(att);
-};
+const userModel = model<IUser>('User', userSchema);
 
 // const User = mongoose.model(
 //   "User",
@@ -38,4 +38,4 @@ const build = (att: IUser) => {
 //     ]
 //   })
 // );
-export default User;
+export default userModel;
