@@ -1,19 +1,20 @@
 import { Schema, Document, Model, model } from 'mongoose';
-import { jwtExpiration, jwtRefreshExpiration } from '../config/config';
-const { v4: uuidv4 } = require('uuid');
+import testDb from '../database/init.multi.mongodb';
+import { jwtRefreshExpiration } from '../config/config';
+import { v4 as uuidv4 } from 'uuid';
 
-interface RefreshTokenDocument extends Document {
+interface refreshTokenDocument extends Document {
     token: string;
     expiryDate: Date;
     userId: Schema.Types.ObjectId;
 }
 
-interface RefreshTokenModel extends Model<RefreshTokenDocument> {
+interface refreshTokenModel extends Model<refreshTokenDocument> {
     createToken(userId: string): string;
-    verifyExpiration(token: RefreshTokenDocument): boolean;
+    verifyExpiration(token: refreshTokenDocument): boolean;
 }
 
-const RefreshTokenSchema = new Schema<RefreshTokenDocument, RefreshTokenModel>({
+const refreshTokenSchema = new Schema<refreshTokenDocument, refreshTokenModel>({
     token: { type: String, required: true },
     expiryDate: { type: Date },
     userId: {
@@ -22,8 +23,8 @@ const RefreshTokenSchema = new Schema<RefreshTokenDocument, RefreshTokenModel>({
     }
 });
 
-RefreshTokenSchema.static('createToken', async function createToken(_userId) {
-    console.log('creterefreshToken');
+refreshTokenSchema.static('createToken', async function createToken(_userId) {
+    console.log('creteRefreshToken');
     let expiredAt = new Date();
 
     expiredAt.setSeconds(expiredAt.getSeconds() + jwtRefreshExpiration);
@@ -39,18 +40,16 @@ RefreshTokenSchema.static('createToken', async function createToken(_userId) {
         expiryDate: expiredAt.getTime()
     });
 
-    console.log('object', _object);
-
     let refreshToken = await _object.save();
     console.log('refresh', refreshToken);
 
     return refreshToken.token;
 });
 
-RefreshTokenSchema.static('verifyExpiration', function verifyExpiration(token) {
+refreshTokenSchema.static('verifyExpiration', function verifyExpiration(token) {
     return token.expiryDate.getTime() < new Date().getTime();
 });
 
-const RefreshToken: RefreshTokenModel = model<RefreshTokenDocument, RefreshTokenModel>('RefreshToken', RefreshTokenSchema);
+const refreshToken: refreshTokenModel = testDb.model<refreshTokenDocument, refreshTokenModel>('RefreshToken', refreshTokenSchema);
 
-export default RefreshToken;
+export default refreshToken;

@@ -1,16 +1,18 @@
-import { Document, Schema, model } from 'mongoose';
-import testDb from '../database/init.multi.mongodb';
-export interface IRole extends Document {
-    name: string;
-}
-const roleSchema = new Schema<IRole>({
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose_1 = require("mongoose");
+const init_multi_mongodb_1 = __importDefault(require("../database/init.multi.mongodb"));
+const roleSchema = new mongoose_1.Schema({
     name: {
         type: String,
         require: true
         // unique: true
     }
 });
-const roleModel = testDb.model<IRole>('Role', roleSchema);
+const roleModel = init_multi_mongodb_1.default.model('Role', roleSchema);
 roleModel.findOne({ name: 'user' }).then((role) => {
     if (!role) {
         roleModel.create({ name: 'user' });
@@ -29,5 +31,4 @@ roleModel.findOne({ name: 'moderator' }).then((role) => {
         console.log("added 'moderator' to roles collection");
     }
 });
-
-export default roleModel;
+exports.default = roleModel;

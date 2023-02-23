@@ -1,4 +1,5 @@
-import mongoose, { Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import testDb from '../database/init.multi.mongodb';
 import { IRole } from './role.model';
 // 1. Create an interface representing a document in MongoDB.
 export interface IUser {
@@ -15,27 +16,13 @@ const userSchema = new Schema<IUser>({
     password: { type: String, required: true },
     roles: [
         {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'Role'
         }
     ]
 });
 
 // 3. Create a Model.
-const userModel = model<IUser>('User', userSchema);
+const userModel = testDb.model<IUser>('User', userSchema);
 
-// const User = mongoose.model(
-//   "User",
-//   new mongoose.Schema({
-//     username: String,
-//     email: String,
-//     password: String,
-//     roles: [
-//       {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: "Role"
-//       }
-//     ]
-//   })
-// );
 export default userModel;

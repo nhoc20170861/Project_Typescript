@@ -1,10 +1,9 @@
 import { accessTokenSecret } from '../config/config';
-import { IUser } from '../models/user.model';
 import db from '../models';
 import { Request, Response } from 'express';
 import { jwtExpiration } from '../config/config';
 import mongoose from 'mongoose';
-import roleModel, { IRole } from '../models/role.model';
+import { IRole } from '../models/role.model';
 
 const User = db.user;
 const Role = db.role;
@@ -27,7 +26,6 @@ class AuthController {
                 res.status(500).send({ message: err });
                 return;
             }
-            // return res.status(200).json({ message: 'User was registered successfully!' });
 
             if (req.body.roles) {
                 Role.find(
@@ -78,7 +76,7 @@ class AuthController {
         User.findOne({
             username: req.body.username
         })
-            //.populate('roles', '-__v')
+            .populate('roles', 'name -_id')
             .exec(async (err, user) => {
                 if (err) {
                     res.status(500).send({ message: err });
@@ -89,6 +87,7 @@ class AuthController {
                     return res.status(404).send({ message: 'User Not found.' });
                 }
 
+                console.log('🚀 user:', user);
                 var passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
 
                 if (!passwordIsValid) {
@@ -104,17 +103,14 @@ class AuthController {
 
                 // set refreshToken
                 const refreshToken = await RefreshToken.createToken(user.id);
-                console.log('refreshtoken', refreshToken);
 
                 var authorities: string[] = [];
-               
+
                 for (let i = 0; i < user.roles.length; i++) {
-                    await roleModel.findById(user.roles[i]).then((role) => {
-                        if (role != null) {
-                            authorities.push('ROLE_' + role.name.toUpperCase());
-                        }
-                    });
+                    const roleName = user.roles[i].name;
+                    authorities.push('ROLE_' + roleName.toUpperCase());
                 }
+
                 res.status(200).send({
                     id: user._id,
                     username: user.username,
