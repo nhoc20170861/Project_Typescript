@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  mongodb_container:
+    image: mongo:latest
+    container_name: my-mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=test
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb:/data/db
+      - mongoconfig:/data/configdb
+  backend:
+    container_name: rest-api
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_HOST=host.docker.internal
+    ports:
+      - 8443:8443
+volumes:
+  mongodb:
+  mongoconfig:
+
+# docker compose -p nodejs-mongodb up -d

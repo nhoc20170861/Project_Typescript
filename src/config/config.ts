@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config();
 
 export const SERVER_PORT = process.env.PORT_SERVER;
 
